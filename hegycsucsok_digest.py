@@ -596,12 +596,17 @@ HOSSZ: írj 4-6 bekezdést, összesen kb. 300-450 szó terjedelemben.
 FORRÁSMEGJELÖLÉS A SZÖVEGBEN - KRITIKUS SZABÁLY: a cikk elején vagy \
 második bekezdésében természetes módon utalj a forrásra, ÉS ehhez PONTOSAN \
 a következő szöveget használd szó szerint, változtatás nélkül: \
-"{source_name}" (pl. "Az {source_name} beszámolója szerint..." vagy "Az \
-{source_name} cikke szerint..."). Ez azért kritikusan fontos, mert a \
-rendszer ez alapján a PONTOS szöveg alapján fogja automatikusan linkkel \
-ellátni a forrás nevét a cikk publikálásakor - ha átírod vagy más \
-elnevezést használsz (pl. "ORF Tirol" a puszta "orf.at" helyett), a \
-linkelés nem fog működni.
+"{source_name}". A névelőt (a/az) a forrásnév KIEJTÉSE alapján válaszd meg \
+HELYESEN, ahogy egy magyar anyanyelvű írná (pl. "Az orf.at beszámolója \
+szerint..." mert magánhangzóval kezdődik a kiejtése, "A wantedinrome.com \
+cikke szerint..." mert mássalhangzóval) - SOHA ne írd le szó szerint azt, \
+hogy "A(z)", ez NEM helyes magyar szöveg, csak egy általános jelölés volt \
+a példában, nem szó szerint másolandó minta. A forrásnév MAGÁT (a \
+"{source_name}" szót) viszont szó szerint, változtatás nélkül kell \
+használnod, mert a rendszer ez alapján a PONTOS szöveg alapján fogja \
+automatikusan linkkel ellátni a forrás nevét a cikk publikálásakor - ha a \
+forrásnevet átírod vagy más elnevezést használsz, a linkelés nem fog \
+működni.
 
 KRITIKUS SZABÁLY - HIÁNYOS TARTALOM: ha a letöltött cikkszöveg + az \
 RSS-leírás együtt sem elég egy értelmes, tényszerű összefoglalóhoz, VAGY \
@@ -1118,7 +1123,31 @@ def send_email(subject, body_markdown):
 # MAIN
 # ---------------------------------------------------------------------------
 
+REQUIRED_ENV_VARS = [
+    "ANTHROPIC_API_KEY",
+    "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "EMAIL_FROM",
+    "HEGYCSUCSOK_EMAIL_TO",
+    "HEGYCSUCSOK_WP_SITE_URL", "HEGYCSUCSOK_WP_USER", "HEGYCSUCSOK_WP_APP_PASSWORD",
+]
+
+
+def validate_env():
+    """Fail-fast ellenőrzés a futás legelején: ha egy szükséges GitHub
+    Secret hiányzik VAGY üres string, itt egyetlen, egyértelmű
+    hibaüzenettel álljon meg a script - ne kusza "Invalid URL" / SMTP
+    hibákon keresztül derüljön ki a végén."""
+    missing = [name for name in REQUIRED_ENV_VARS if not os.environ.get(name)]
+    if missing:
+        print("HIBA: a következő GitHub Secret(ek) hiányoznak vagy üresek: "
+              + ", ".join(missing))
+        print("Ellenőrizd a repó Settings → Secrets and variables → Actions "
+              "alatt, hogy pontosan ezekkel a nevekkel léteznek-e, és van-e "
+              "értékük.")
+        raise SystemExit(1)
+
+
 def main():
+    validate_env()
     candidates = collect_candidates()
     print(f"Talált (előszűrt) jelölt: {len(candidates)}")
 
