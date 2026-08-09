@@ -1,0 +1,39 @@
+name: Hegyvidéki napi hír-digest (hegycsucsok.hu)
+
+on:
+  schedule:
+    # Minden nap 07:30-kor UTC - a hetedhetorszag.hu-s daily-digest.yml
+    # (06:30 UTC) és a vizpartok-daily-digest.yml (07:00 UTC) UTÁN, hogy a
+    # három Anthropic API-hívás-sorozat ne egy időben terhelje a rate
+    # limitet.
+    - cron: "30 7 * * *"
+  workflow_dispatch: {}   # kézi indítás a GitHub felületén - teszteléshez
+
+jobs:
+  send-hegycsucsok-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repó klónozása
+        uses: actions/checkout@v4
+
+      - name: Python telepítése
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Függőségek telepítése
+        run: pip install -r requirements.txt
+
+      - name: Hegyvidéki digest futtatása és email küldése
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          HEGYCSUCSOK_EMAIL_TO: ${{ secrets.HEGYCSUCSOK_EMAIL_TO }}
+          HEGYCSUCSOK_WP_SITE_URL: ${{ secrets.HEGYCSUCSOK_WP_SITE_URL }}
+          HEGYCSUCSOK_WP_USER: ${{ secrets.HEGYCSUCSOK_WP_USER }}
+          HEGYCSUCSOK_WP_APP_PASSWORD: ${{ secrets.HEGYCSUCSOK_WP_APP_PASSWORD }}
+        run: python hegycsucsok_digest.py
